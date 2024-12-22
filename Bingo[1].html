@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bingo Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f0f0f0;
+        }
+        .bingo-card {
+            display: grid;
+            grid-template-columns: repeat(5, 100px);
+            grid-template-rows: repeat(5, 100px);
+            gap: 5px;
+            margin: 20px auto;
+            max-width: 550px;
+        }
+        .bingo-cell {
+            width: 100px;
+            height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #fff;
+            border: 2px solid #333;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .bingo-cell.selected {
+            background-color: #0f0;
+        }
+        .control-panel {
+            margin-top: 20px;
+        }
+        .call-button {
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+        .status {
+            margin-top: 20px;
+            font-size: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Bingo Game</h1>
+    <div class="bingo-card" id="bingo-card">
+        <!-- Bingo Card Cells will be generated here -->
+    </div>
+    <div class="control-panel">
+        <button class="call-button" onclick="callNumber()">Call Number</button>
+    </div>
+    <div class="status" id="status">Start the game!</div>
+    <script>
+        let bingoCard = [];
+        let calledNumbers = [];
+        let isGameOver = false;
+
+        // Create Bingo Card
+        function createBingoCard() {
+            const card = [];
+            const usedNumbers = new Set();
+
+            // Generate the numbers for each column
+            for (let col = 0; col < 5; col++) {
+                let columnNumbers = [];
+                while (columnNumbers.length < 5) {
+                    let num = Math.floor(Math.random() * 15) + (col * 15) + 1;
+                    if (!usedNumbers.has(num)) {
+                        usedNumbers.add(num);
+                        columnNumbers.push(num);
+                    }
+                }
+                card.push(columnNumbers);
+            }
+
+            // Insert the Free Space in the center
+            card[2][2] = 'Free';
+
+            return card;
+        }
+
+        // Render Bingo Card
+        function renderBingoCard() {
+            const bingoCardDiv = document.getElementById('bingo-card');
+            bingoCardDiv.innerHTML = '';
+
+            for (let row = 0; row < 5; row++) {
+                for (let col = 0; col < 5; col++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('bingo-cell');
+                    cell.dataset.row = row;
+                    cell.dataset.col = col;
+                    cell.textContent = bingoCard[col][row];
+                    cell.addEventListener('click', markCell);
+                    bingoCardDiv.appendChild(cell);
+                }
+            }
+        }
+
+        // Mark a Bingo Cell when clicked
+        function markCell(event) {
+            if (isGameOver) return;
+            const cell = event.target;
+            if (cell.classList.contains('selected')) {
+                cell.classList.remove('selected');
+            } else {
+                cell.classList.add('selected');
+            }
+        }
+
+        // Call a random Bingo number
+        function callNumber() {
+            if (isGameOver) return;
+
+            // Generate a random number from 1 to 75
+            let number;
+            do {
+                number = Math.floor(Math.random() * 75) + 1;
+            } while (calledNumbers.includes(number));
+            calledNumbers.push(number);
+
+            // Update status with the called number
+            const status = document.getElementById('status');
+            status.textContent = `Called Number: ${number}`;
+
+            // Mark the corresponding cell
+            markCalledNumber(number);
+
+            // Check if the player has won
+            checkForWin();
+        }
+
+        // Mark the corresponding Bingo Cell based on the called number
+        function markCalledNumber(number) {
+            for (let col = 0; col < 5; col++) {
+                for (let row = 0; row < 5; row++) {
+                    if (bingoCard[col][row] === number) {
+                        const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+                        cell.classList.add('selected');
+                    }
+                }
+            }
+        }
+
+        // Check if the player has won
+        function checkForWin() {
+            // Check rows and columns for a win
+            for (let i = 0; i < 5; i++) {
+                if (checkLine(i, 'row') || checkLine(i, 'col')) {
+                    endGame(`Bingo! You win with a ${i + 1}th ${checkLine(i, 'row') ? 'row' : 'column'}!`);
+                    return;
+                }
+            }
+
+            // Check diagonals for a win
+            if (checkDiagonal('left') || checkDiagonal('right')) {
+                endGame('Bingo! You win with a diagonal!');
+            }
+        }
+
+        // Check if a row or column has a complete line of marked cells
+        function checkLine(index, type) {
+            const line = type === 'row' ? bingoCard[index] : bingoCard.map(row => row[index]);
+            return line.every(num => calledNumbers.includes(num) || num === 'Free');
+        }
+
+        // Check diagonals for a win
+        function checkDiagonal(direction) {
+            let diagonal = [];
+            if (direction === 'left') {
+                diagonal = [bingoCard[0][0], bingoCard[1][1], bingoCard[2][2], bingoCard[3][3], bingoCard[4][4]];
+            } else {
+                diagonal = [bingoCard[0][4], bingoCard[1][3], bingoCard[2][2], bingoCard[3][1], bingoCard[4][0]];
+            }
+            return diagonal.every(num => calledNumbers.includes(num) || num === 'Free');
+        }
+
+        // End the game
+        function endGame(message) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            isGameOver = true;
+        }
+
+        // Initialize the game
+        function startGame() {
+            bingoCard = createBingoCard();
+            renderBingoCard();
+        }
+
+        // Start the game on page load
+        window.onload = startGame;
+    </script>
+    <a href="First page.html" Align="Right">Back</a>
+</body>
+</html>

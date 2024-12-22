@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Puzzle Bobble Game</title>
+    <style>
+        * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+    text-align: center;
+    padding-top: 20px;
+}
+
+h1 {
+    color: #333;
+}
+
+canvas {
+    border: 2px solid #000;
+    background-color: #fff;
+}
+    </style>
+</head>
+<body>
+    <h1>Puzzle Bobble Game</h1>
+    <canvas id="gameCanvas" width="400" height="600"></canvas>
+    <script >
+        const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// Constants
+const BUBBLE_RADIUS = 15;
+const COLORS = ['red', 'green', 'blue', 'yellow', 'purple'];
+
+// Game state variables
+let bubbles = [];
+let currentBubble = createBubble();
+let isShooting = false;
+
+// Bubble creation function
+function createBubble(color = null, x = canvas.width / 2, y = canvas.height - 30) {
+    return {
+        x: x,
+        y: y,
+        color: color || COLORS[Math.floor(Math.random() * COLORS.length)],
+    };
+}
+
+// Draw the bubbles on the canvas
+function drawBubbles() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
+    // Draw each bubble
+    for (let bubble of bubbles) {
+        ctx.beginPath();
+        ctx.arc(bubble.x, bubble.y, BUBBLE_RADIUS, 0, Math.PI * 2);
+        ctx.fillStyle = bubble.color;
+        ctx.fill();
+        ctx.stroke();
+    }
+    // Draw the current bubble (the one being shot)
+    ctx.beginPath();
+    ctx.arc(currentBubble.x, currentBubble.y, BUBBLE_RADIUS, 0, Math.PI * 2);
+    ctx.fillStyle = currentBubble.color;
+    ctx.fill();
+    ctx.stroke();
+}
+
+// Shoot the bubble (move it upwards)
+function shootBubble() {
+    if (!isShooting) {
+        isShooting = true;
+        const interval = setInterval(() => {
+            currentBubble.y -= 5; // Move the bubble up
+            if (currentBubble.y <= BUBBLE_RADIUS) {
+                bubbles.push(currentBubble); // Add the bubble to the grid
+                currentBubble = createBubble(); // Create a new bubble
+                isShooting = false; // Bubble is no longer shooting
+                clearInterval(interval);
+            }
+            drawBubbles();
+        }, 20);
+    }
+}
+
+// Handle user input (shoot the bubble when mouse is clicked)
+canvas.addEventListener('click', () => {
+    shootBubble();
+});
+
+// Initialize the game with a few bubbles at the top
+for (let i = 0; i < 10; i++) {
+    bubbles.push(createBubble(COLORS[Math.floor(Math.random() * COLORS.length)], Math.random() * canvas.width, i * (BUBBLE_RADIUS * 2)));
+}
+
+// Main game loop
+function gameLoop() {
+    drawBubbles();
+    requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
+
+    </script>
+</body>
+</html>
